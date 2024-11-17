@@ -9,7 +9,7 @@ public class FileServ {
 
     private String Path;
     private int segmentCount;
-    private static int CHUNK_SIZE = 1024; // not working for splitting
+    private final int CHUNK_SIZE = 1024; // not working for splitting
 
     public FileServ(String Path, int segmentCount) {
         this.Path = Path;
@@ -24,11 +24,13 @@ public class FileServ {
             if(!tod.delete()){
                 throw new Exception("Failed");
             }
+            //System.out.println("deleted " + fname+".part"+i);
         }
         File metadata = new File(fname+".json");
         if(!metadata.delete()){
             throw new Exception("Metadata Failed");
         }
+
     }
 
 
@@ -164,7 +166,7 @@ public class FileServ {
         return sb.toString();
     }
 
-    /*
+
     public static void main(String[] args) throws Exception {
             FileServ fileServ = new FileServ("D:\\CSE215L\\file.png", 6);
 
@@ -174,6 +176,6 @@ public class FileServ {
             fileServ.deleteS();
 
     }
-     */
+
 
 }
