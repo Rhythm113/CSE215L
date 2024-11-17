@@ -168,12 +168,12 @@ public class FileServ {
 
 
     public static void main(String[] args) throws Exception {
-            FileServ fileServ = new FileServ("D:\\CSE215L\\file.png", 6);
+            FileServ fileServ = new FileServ("big.zip", 6);
 
             fileServ.split();
 
-            fileServ.rebuild("D:\\CSE215L\\tests\\out");
-            fileServ.deleteS();
+            //fileServ.rebuild("D:\\CSE215L\\tests\\out");
+            //fileServ.deleteS();
 
     }
 
