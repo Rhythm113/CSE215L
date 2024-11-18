@@ -1,6 +1,8 @@
+import javax.xml.crypto.Data;
 import java.io.*;
 import java.io.DataOutputStream;
 import java.net.Socket;
+import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 
 public class FileClient {
@@ -19,11 +21,46 @@ public class FileClient {
         this.serverPort = serverPort;
     }
 
+    /*
     public void sendFiles(String[] filePaths) {
         for (String filePath : filePaths) {
             new Thread(() -> sendFile(filePath)).start();
         }
+    }*/
+
+    // ref : https://www.baeldung.com/java-countdown-latch
+    public void sendFiles(String[] filePaths,String fname, int fileParts) {
+
+        CountDownLatch latch = new CountDownLatch(filePaths.length);
+
+        for (String filePath : filePaths) {
+            new Thread(() -> {
+                try {
+                    sendFile(filePath);
+                } finally {
+                    latch.countDown();
+                }
+            }).start();
+        }
+
+
+        new Thread(() -> {
+            try {
+                latch.await();
+                try {
+                    DataOutputStream a = new DataOutputStream(new Socket(serverAddress, serverPort).getOutputStream());
+                    a.writeInt(-9999);
+                    a.writeUTF(fname);
+                    a.writeInt(fileParts);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
+
 
 
 
@@ -80,7 +117,7 @@ public class FileClient {
         };
 
         FileClient client = new FileClient(serverAddress, serverPort);
-        client.setCode(6480);
-        client.sendFiles(filePaths);
+        client.setCode(new Scanner(System.in).nextInt());
+        client.sendFiles(filePaths,"big.zip",6);
     }
 }

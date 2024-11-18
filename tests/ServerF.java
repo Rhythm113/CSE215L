@@ -5,14 +5,9 @@ public class ServerF {
     private int port;
     private final int CHUNK_SIZE = 4096;
     private int code = new Utils().randomCode();
-    public String fileName;
 
     public ServerF(int port) {
         this.port = port;
-    }
-
-    public String getFileName() {
-        return fileName;
     }
 
     public void start() {
@@ -43,24 +38,31 @@ public class ServerF {
     }
 
     private void handleClient(Socket clientSocket, File dlDirectory, int c) {
+        String clientFileName = null;
         try (DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
              DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream())) {
 
-            /*if(dis.readUTF().equals("EOF")){
-                return;
-            }*/
+            int receivedCode = dis.readInt();
+            System.out.println("Received pairing code: " + receivedCode);
 
-            int a = dis.readInt();
-            System.out.println(a);
-            if(c != a){
-                System.out.println("Invalid pair code");
+            if(receivedCode == -9999){
+                String fn = dis.readUTF();
+                int p = dis.readInt();
+                rebuild(fn,"dl\\",p);
                 return;
             }
-            fileName = dis.readUTF();
-            long fileSize = dis.readLong();
-            System.out.println(" rcv file: " + fileName + " (" + fileSize + " bytes)");
 
-            File file = new File(dlDirectory, fileName);
+            if (c != receivedCode) {
+                System.out.println("Invalid pairing code");
+                dos.writeUTF("Invalid pairing code");
+                return;
+            }
+
+            clientFileName = dis.readUTF();
+            long fileSize = dis.readLong();
+            System.out.println("Receiving file: " + clientFileName + " (" + fileSize + " bytes)");
+
+            File file = new File(dlDirectory, clientFileName);
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 byte[] buffer = new byte[CHUNK_SIZE];
                 long bytesReceived = 0;
@@ -68,13 +70,18 @@ public class ServerF {
 
                 while (bytesReceived < fileSize) {
                     bytesRead = dis.read(buffer, 0, (int) Math.min(buffer.length, fileSize - bytesReceived));
+                    if (bytesRead == -1) {
+                        throw new IOException("Unexpected end of stream");
+                    }
                     fos.write(buffer, 0, bytesRead);
                     bytesReceived += bytesRead;
                 }
+                System.out.println("File " + clientFileName + " received successfully.");
+                dos.writeUTF("File " + clientFileName + " received successfully.");
+            } catch (IOException e) {
+                System.err.println("Error saving file " + clientFileName + ": " + e.getMessage());
+                dos.writeUTF("Error saving file: " + clientFileName);
             }
-
-            System.out.println("File " + fileName + " received successfully.");
-            dos.writeUTF("File " + fileName + " received successfully.");
         } catch (IOException e) {
             System.err.println("Error handling client: " + e.getMessage());
             e.printStackTrace();
@@ -87,10 +94,11 @@ public class ServerF {
         }
     }
 
-    private void rebuild(String name,String path){
+    private void rebuild(String name,String path,int parts){
         FileServ a = new FileServ(null,0);
         try {
             a.rebuild(name, path);
+            a.deleteS("dl\\"+name,parts);
         }catch (Exception e){
             e.printStackTrace();
         }

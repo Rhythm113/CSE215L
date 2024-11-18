@@ -16,15 +16,15 @@ public class FileServ {
         this.segmentCount = segmentCount;
     }
 
-    public void deleteS(String fname) throws Exception{
-        for (int i = 0; i <segmentCount; i++){
-            File tod = new File(fname+".part"+i);
+    public void deleteS(String of,int p) throws Exception{
+        for (int i = 0; i <p; i++){
+            File tod = new File(of+".part"+i);
             if(!tod.delete()){
                 throw new Exception("Failed");
             }
-            //System.out.println("deleted " + fname+".part"+i);
+            System.out.println("deleted " + of+".part"+i);
         }
-        File metadata = new File(fname+".json");
+        File metadata = new File(of+".json");
         if(!metadata.delete()){
             throw new Exception("Metadata Failed");
         }
@@ -169,7 +169,7 @@ public class FileServ {
 
             fileServ.split();
 
-            fileServ.rebuild("big.zip", "D:\\CSE215L\\tests\\out");
+            //fileServ.rebuild("big.zip", "D:\\CSE215L\\tests\\out");
             //fileServ.deleteS("big.zip");
 
     }
