@@ -4,9 +4,15 @@ import java.net.*;
 public class ServerF {
     private int port;
     private final int CHUNK_SIZE = 4096;
+    private int code = new Utils().randomCode();
+    public String fileName;
 
     public ServerF(int port) {
         this.port = port;
+    }
+
+    public String getFileName() {
+        return fileName;
     }
 
     public void start() {
@@ -22,23 +28,35 @@ public class ServerF {
                 }
             }
 
+            System.out.println("pair code : "+ code);
+
             while (true) {
                 System.out.println("Waiting for a connection...");
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Connected to " + clientSocket.getInetAddress());
 
-                new Thread(() -> handleClient(clientSocket, DIR)).start();
+                new Thread(() -> handleClient(clientSocket, DIR, code)).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void handleClient(Socket clientSocket, File dlDirectory) {
+    private void handleClient(Socket clientSocket, File dlDirectory, int c) {
         try (DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
              DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream())) {
 
-            String fileName = dis.readUTF();
+            /*if(dis.readUTF().equals("EOF")){
+                return;
+            }*/
+
+            int a = dis.readInt();
+            System.out.println(a);
+            if(c != a){
+                System.out.println("Invalid pair code");
+                return;
+            }
+            fileName = dis.readUTF();
             long fileSize = dis.readLong();
             System.out.println(" rcv file: " + fileName + " (" + fileSize + " bytes)");
 
@@ -67,6 +85,16 @@ public class ServerF {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void rebuild(String name,String path){
+        FileServ a = new FileServ(null,0);
+        try {
+            a.rebuild(name, path);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     public static void main(String[] args) {

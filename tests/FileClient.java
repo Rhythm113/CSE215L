@@ -1,10 +1,18 @@
 import java.io.*;
-import java.net.*;
+import java.io.DataOutputStream;
+import java.net.Socket;
+import java.util.concurrent.CountDownLatch;
 
 public class FileClient {
     private String serverAddress;
     private int serverPort;
     private final int CHUNK_SIZE = 4096;
+    public int code = 0;
+
+
+    public void setCode(int code) {
+        this.code = code;
+    }
 
     public FileClient(String serverAddress, int serverPort) {
         this.serverAddress = serverAddress;
@@ -16,6 +24,8 @@ public class FileClient {
             new Thread(() -> sendFile(filePath)).start();
         }
     }
+
+
 
     private void sendFile(String filePath) {
         File file = new File(filePath);
@@ -31,6 +41,7 @@ public class FileClient {
 
             System.out.println("Connected to the server for file: " + filePath);
 
+            dos.writeInt(code);
             dos.writeUTF(file.getName());
             dos.writeLong(file.length());
 
@@ -57,6 +68,7 @@ public class FileClient {
         String serverAddress = "localhost";
         int serverPort = 5000;
 
+
         String[] filePaths = {
                 "big.zip.json",
                 "big.zip.part0",
@@ -68,6 +80,7 @@ public class FileClient {
         };
 
         FileClient client = new FileClient(serverAddress, serverPort);
+        client.setCode(6480);
         client.sendFiles(filePaths);
     }
 }

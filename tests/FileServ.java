@@ -7,18 +7,16 @@ import java.util.*;
 
 public class FileServ {
 
-    private String Path;
+    private String Path;  //if rebuild then path == filename
     private int segmentCount;
-    private final int CHUNK_SIZE = 1024; // not working for splitting
+    private final int CHUNK_SIZE = 4096; // not working for splitting
 
     public FileServ(String Path, int segmentCount) {
         this.Path = Path;
         this.segmentCount = segmentCount;
     }
 
-    public void deleteS() throws Exception{
-        File del = new File(Path);
-        String fname = del.getName();
+    public void deleteS(String fname) throws Exception{
         for (int i = 0; i <segmentCount; i++){
             File tod = new File(fname+".part"+i);
             if(!tod.delete()){
@@ -94,6 +92,7 @@ public class FileServ {
         fis2.close();
 
         Map<String, Object> metadata = new HashMap<>();
+       // metadata.put("name",fileName);
         metadata.put("hash", fileHash);
         metadata.put("segments", segmentSizes);
 
@@ -108,9 +107,7 @@ public class FileServ {
     }
 
 
-    public void rebuild(String path) throws Exception {
-        File file = new File(Path);
-        String fileName = file.getName();
+    public void rebuild(String fileName, String path) throws Exception {
 
         Gson gson = new Gson();
         Map<String, Object> metadata;
@@ -123,13 +120,13 @@ public class FileServ {
         List<Double> segmentSizes = (List<Double>) metadata.get("segments");
 
         /*
-        for(int i = 0; i <= segmentSizes.toArray().length ;i++){
+        for(int i = 0; i <= segmentSizes.size() ;i++){
             System.out.println(segmentSizes.toArray()[i]);
         }
         */
 
 
-        FileOutputStream fos = new FileOutputStream( path+"\\dl_" + fileName);
+        FileOutputStream fos = new FileOutputStream( path+"\\downloaded_" + fileName);
         MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
         for (int i = 0; i < segmentSizes.size(); i++) {
@@ -172,8 +169,8 @@ public class FileServ {
 
             fileServ.split();
 
-            //fileServ.rebuild("D:\\CSE215L\\tests\\out");
-            //fileServ.deleteS();
+            fileServ.rebuild("big.zip", "D:\\CSE215L\\tests\\out");
+            //fileServ.deleteS("big.zip");
 
     }
 
