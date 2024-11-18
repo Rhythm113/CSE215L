@@ -113,7 +113,8 @@ public class FileClient {
                 "big.zip.part2",
                 "big.zip.part3",
                 "big.zip.part4",
-                "big.zip.part5"
+                //"big.zip.part5"
+
         };
 
         FileClient client = new FileClient(serverAddress, serverPort);

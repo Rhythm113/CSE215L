@@ -107,12 +107,12 @@ public class FileServ {
     }
 
 
-    public void rebuild(String fileName, String path) throws Exception {
+    public void rebuild(String fna, String po) throws Exception {
 
         Gson gson = new Gson();
         Map<String, Object> metadata;
 
-        try (FileReader jsonFile = new FileReader(fileName + ".json")) {
+        try (FileReader jsonFile = new FileReader(po + fna + ".json")) {
             metadata = gson.fromJson(jsonFile, Map.class);
         }
 
@@ -126,11 +126,11 @@ public class FileServ {
         */
 
 
-        FileOutputStream fos = new FileOutputStream( path+"\\downloaded_" + fileName);
+        FileOutputStream fos = new FileOutputStream( po+"\\downloaded_" + fna);
         MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
         for (int i = 0; i < segmentSizes.size(); i++) {
-            String segmentName = fileName + ".part" + i;
+            String segmentName = po + fna + ".part" + i;
             FileInputStream fis = new FileInputStream(segmentName);
 
             byte[] buffer = new byte[CHUNK_SIZE];

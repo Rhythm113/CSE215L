@@ -5,6 +5,7 @@ public class ServerF {
     private int port;
     private final int CHUNK_SIZE = 4096;
     private int code = new Utils().randomCode();
+    private volatile boolean stat = true;
 
     public ServerF(int port) {
         this.port = port;
@@ -25,19 +26,19 @@ public class ServerF {
 
             System.out.println("pair code : "+ code);
 
-            while (true) {
+            while (stat) {
                 System.out.println("Waiting for a connection...");
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Connected to " + clientSocket.getInetAddress());
 
-                new Thread(() -> handleClient(clientSocket, DIR, code)).start();
+                new Thread(() -> handleClient(clientSocket, DIR, code,serverSocket)).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void handleClient(Socket clientSocket, File dlDirectory, int c) {
+    private void handleClient(Socket clientSocket, File dlDirectory, int c, ServerSocket sock) {
         String clientFileName = null;
         try (DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
              DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream())) {
@@ -49,12 +50,16 @@ public class ServerF {
                 String fn = dis.readUTF();
                 int p = dis.readInt();
                 rebuild(fn,"dl\\",p);
+                stat = false;
+                sock.close();
                 return;
             }
 
             if (c != receivedCode) {
                 System.out.println("Invalid pairing code");
                 dos.writeUTF("Invalid pairing code");
+                stat = false;
+                sock.close();
                 return;
             }
 
