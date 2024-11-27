@@ -1,13 +1,13 @@
 import java.io.*;
 import java.net.*;
 
-public class ServerF {
+public class FileServer {
     private int port;
     private final int CHUNK_SIZE = 4096;
     private int code = new Utils().randomCode();
     private volatile boolean stat = true;
 
-    public ServerF(int port) {
+    public FileServer(int port) {
         this.port = port;
     }
 
@@ -112,7 +112,7 @@ public class ServerF {
 
     public static void main(String[] args) {
         int port = 5000;
-        ServerF server = new ServerF(port);
+        FileServer server = new FileServer(port);
         server.start();
     }
 }

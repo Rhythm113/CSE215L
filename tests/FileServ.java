@@ -16,15 +16,15 @@ public class FileServ {
         this.segmentCount = segmentCount;
     }
 
-    public void deleteS(String of,int p) throws Exception{
-        for (int i = 0; i <p; i++){
-            File tod = new File(of+".part"+i);
+    public void deleteS(String tPathofFile,int parts) throws Exception{
+        for (int i = 0; i < parts; i++){
+            File tod = new File(tPathofFile+".part"+i);
             if(!tod.delete()){
                 throw new Exception("Failed");
             }
-            System.out.println("deleted " + of+".part"+i);
+            System.out.println("deleted " + tPathofFile+".part"+i);
         }
-        File metadata = new File(of+".json");
+        File metadata = new File(tPathofFile+".json");
         if(!metadata.delete()){
             throw new Exception("Metadata Failed");
         }
@@ -107,12 +107,12 @@ public class FileServ {
     }
 
 
-    public void rebuild(String fna, String po) throws Exception {
+    public void rebuild(String fileNaameo, String filePathToSave) throws Exception {
 
         Gson gson = new Gson();
         Map<String, Object> metadata;
 
-        try (FileReader jsonFile = new FileReader(po + fna + ".json")) {
+        try (FileReader jsonFile = new FileReader(filePathToSave + fileNaameo + ".json")) {
             metadata = gson.fromJson(jsonFile, Map.class);
         }
 
@@ -126,11 +126,11 @@ public class FileServ {
         */
 
 
-        FileOutputStream fos = new FileOutputStream( po+"\\downloaded_" + fna);
+        FileOutputStream fos = new FileOutputStream( filePathToSave+"\\downloaded_" + fileNaameo);
         MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
         for (int i = 0; i < segmentSizes.size(); i++) {
-            String segmentName = po + fna + ".part" + i;
+            String segmentName = filePathToSave + fileNaameo + ".part" + i;
             FileInputStream fis = new FileInputStream(segmentName);
 
             byte[] buffer = new byte[CHUNK_SIZE];
@@ -165,12 +165,12 @@ public class FileServ {
 
 
     public static void main(String[] args) throws Exception {
-            FileServ fileServ = new FileServ("big.zip", 6);
+            FileServ fileServ = new FileServ("ok\\big.zip", 6);
 
             fileServ.split();
 
-            //fileServ.rebuild("big.zip", "D:\\CSE215L\\tests\\out");
-            //fileServ.deleteS("big.zip");
+            //fileServ.rebuild("big.zip", "D:\\CSE215L\\tests\\ok\\");
+            //fileServ.deleteS("big.zip",6);
 
     }
 
