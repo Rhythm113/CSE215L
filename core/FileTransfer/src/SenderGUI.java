@@ -4,14 +4,19 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 
 public class SenderGUI {
-    public static void main(String[] args) {
-       //body
+
+    private JTextArea console;
+
+    public SenderGUI() {
+        createAndShowGUI();
+    }
+
+    private void createAndShowGUI() {
         JFrame frame = new JFrame("File Transfer - Sender");
-        frame.setSize(600, 350);
+        frame.setSize(600, 500);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
 
-        //gui
         JPanel formPanel = new JPanel();
         formPanel.setLayout(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -20,10 +25,10 @@ public class SenderGUI {
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        //ip
+        // --- IP Address ---
         JLabel ipLabel = new JLabel("IP Address:");
         JTextField ipField = new JTextField(20);
-        ipField.setToolTipText("Enter the recipient's IP address"); 
+        ipField.setToolTipText("Enter the recipient's IP address");
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.LINE_END;
@@ -32,7 +37,7 @@ public class SenderGUI {
         gbc.anchor = GridBagConstraints.LINE_START;
         formPanel.add(ipField, gbc);
 
-        //path
+        // --- File Selection ---
         JLabel fileLabel = new JLabel("File:");
         JTextField filePathField = new JTextField(20);
         filePathField.setEditable(false);
@@ -49,17 +54,17 @@ public class SenderGUI {
         gbc.anchor = GridBagConstraints.LINE_START;
         formPanel.add(fileButton, gbc);
 
-    //JFileChooser
         fileButton.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
             int returnValue = fileChooser.showOpenDialog(frame);
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = fileChooser.getSelectedFile();
                 filePathField.setText(selectedFile.getAbsolutePath());
+                log("File selected: " + selectedFile.getAbsolutePath());
             }
         });
 
-
+        // --- Threads Selection ---
         JLabel threadLabel = new JLabel("Threads:");
         JSlider threadSlider = new JSlider(1, 10, 1);
         threadSlider.setMajorTickSpacing(1);
@@ -79,7 +84,7 @@ public class SenderGUI {
         // --- Pair Code ---
         JLabel pairCodeLabel = new JLabel("Pair Code:");
         JTextField pairCodeField = new JTextField(10);
-        pairCodeField.setToolTipText("Enter the pair code for authentication"); // Add tooltip
+        pairCodeField.setToolTipText("Enter the pair code for authentication");
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.anchor = GridBagConstraints.LINE_END;
@@ -88,7 +93,7 @@ public class SenderGUI {
         gbc.anchor = GridBagConstraints.LINE_START;
         formPanel.add(pairCodeField, gbc);
 
-        // send
+        // --- Send Button ---
         JButton sendButton = new JButton("Send");
         gbc.gridx = 0;
         gbc.gridy = 4;
@@ -102,47 +107,71 @@ public class SenderGUI {
             int threads = threadSlider.getValue();
             String pairCode = pairCodeField.getText();
 
-            // Input validation
-            if (ip.trim().isEmpty() || filePath.trim().isEmpty() || pairCode.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(frame, "All fields are required!", "Error", JOptionPane.ERROR_MESSAGE);
-            } else if (!isValidIP(ip)) {
-                JOptionPane.showMessageDialog(frame, "Invalid IP address format!", "Error", JOptionPane.ERROR_MESSAGE);
-            } else if (!new File(filePath).exists()) {
-                JOptionPane.showMessageDialog(frame, "File does not exist!", "Error", JOptionPane.ERROR_MESSAGE);
-            } else {
-
-                JOptionPane.showMessageDialog(frame,
-                        "Starting file transfer...\nIP: " + ip +
-                                "\nFile: " + filePath +
-                                "\nThreads: " + threads +
-                                "\nPair Code: " + pairCode,
-                        "Transfer Started", JOptionPane.INFORMATION_MESSAGE);
-
-            }
+            validateAndSend(ip, filePath, threads, pairCode);
         });
 
-        frame.add(formPanel, BorderLayout.CENTER);
+        // --- Console Area ---
+        console = new JTextArea(8, 40);
+        console.setEditable(false);
+        JScrollPane consoleScrollPane = new JScrollPane(console);
+        consoleScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        consoleScrollPane.setBorder(BorderFactory.createTitledBorder("Console Output"));
 
+        // --- Frame Layout ---
+        frame.add(formPanel, BorderLayout.CENTER);
+        frame.add(consoleScrollPane, BorderLayout.SOUTH);
 
         frame.setVisible(true);
     }
 
-    // ref : github
-    private static boolean isValidIP(String ip) {
-        String[] parts = ip.split("\\.");
-        if (parts.length != 4) {
-            return false;
+    private void validateAndSend(String ip, String filePath, int threads, String pairCode) {
+        if (ip.trim().isEmpty() || filePath.trim().isEmpty() || pairCode.trim().isEmpty()) {
+            log("Error: All fields are required!");
+            JOptionPane.showMessageDialog(null, "All fields are required!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        for (String part : parts) {
+
+        if (!Utils.isValidIP(ip)) {
+            log("Error: Invalid IP address format!");
+            JOptionPane.showMessageDialog(null, "Invalid IP address format!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        File file = new File(filePath);
+        if (!file.exists()) {
+            log("Error: File does not exist!");
+            JOptionPane.showMessageDialog(null, "File does not exist!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        log("Starting file transfer...");
+
+        SwingUtilities.invokeLater(() -> {
             try {
-                int num = Integer.parseInt(part);
-                if (num < 0 || num > 255) {
-                    return false;
+                FileClient client = new FileClient(ip, 5000);
+                client.setCode(Integer.parseInt(pairCode));
+                try {
+                    FileServ a = new FileServ(filePath,threads);
+                    a.split();
+                }finally {
+                    String[] paths = client.getPaths(filePath, threads);
+                    client.sendFiles(paths, file.getName(), threads);
+                    log("File transfer initiated successfully.");
                 }
-            } catch (NumberFormatException e) {
-                return false;
+
+            } catch (Exception ex) {
+                log("Error initiating file transfer: " + ex.getMessage());
+                JOptionPane.showMessageDialog(null, "Failed to start transfer: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-        }
-        return true;
+        });
     }
+
+    private void log(String message) {
+        console.append(message + "\n");
+        console.setCaretPosition(console.getDocument().getLength());
+    }
+     /*
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(SenderGUI::new);
+    }*/
 }

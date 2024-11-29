@@ -39,7 +39,7 @@ public class FileServer {
         } catch (IOException e) {
             logMessage("Server stopped or encountered an error: " + e.getMessage());
         } //finally {
-           // stop();
+        // stop();
         //}
     }
 
