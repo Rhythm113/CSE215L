@@ -11,12 +11,12 @@ public class ReceiverGUI {
 
     private JTextField pairCodeField;
     private JTextField saveFolderField;
-    private static JTextArea console = new JTextArea(8, 40);
+    private static final JTextArea console = new JTextArea(8, 40);
     static int randomCode = Utils.randomCode();
     private static String path_selected = "";
     private FileServer fileServer;
     private Thread serverThread;
-    private JButton startButton = new JButton("Start Server");
+    private final JButton startButton = new JButton("Start Server");
 
     /*
     public static void main(String[] args) {

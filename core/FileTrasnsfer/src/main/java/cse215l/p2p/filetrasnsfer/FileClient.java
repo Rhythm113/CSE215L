@@ -6,8 +6,8 @@ import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
 
 public class FileClient {
-    private String serverAddress;
-    private int serverPort;
+    private final String serverAddress;
+    private final int serverPort;
     private final int CHUNK_SIZE = 4096;
     public int code = 0;
 

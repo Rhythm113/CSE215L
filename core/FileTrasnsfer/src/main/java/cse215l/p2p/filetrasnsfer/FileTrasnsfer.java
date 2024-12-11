@@ -36,18 +36,17 @@ public class FileTrasnsfer {
         sendButton.addActionListener((ActionEvent e) -> {
             SwingUtilities.invokeLater(() -> {
                 SenderGUI senderGUI = new SenderGUI();
-//senderGUI.setBoundsForPosition("middle-right");
             });
         });
 
         receiveButton.addActionListener((ActionEvent e) -> {
             SwingUtilities.invokeLater(() -> {
                 ReceiverGUI receiverGUI = new ReceiverGUI();
-                //receiverGUI.setBoundsForPosition("middle-left");
             });
         });
 
         frame.add(mainPanel, BorderLayout.CENTER);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

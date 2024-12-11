@@ -9,8 +9,8 @@ import java.util.*;
 
 public class FileServ {
 
-    private String Path;  //if rebuild then path == filename
-    private int segmentCount;
+    private final String Path;  //if rebuild then path == filename
+    private final int segmentCount;
     private final int CHUNK_SIZE = 8192; // not working for splitting
 
     public FileServ(String Path, int segmentCount) {
