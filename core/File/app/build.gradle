@@ -1,0 +1,32 @@
+plugins {
+	id 'com.android.application'
+}
+
+android {
+	namespace "com.cse215l.p2p"  // Add the namespace here
+
+	compileSdkVersion 34  // Updated to the latest SDK version
+
+	defaultConfig {
+		applicationId "com.cse215l.p2p"
+		minSdkVersion 21
+		targetSdkVersion 28  // Updated to the latest SDK version
+		versionCode 1
+		versionName "1.0"
+	}
+
+	buildTypes {
+		release {
+			minifyEnabled false
+			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+		}
+	}
+}
+
+dependencies {
+	implementation fileTree(dir: 'libs', include: ['*.jar'])
+	implementation 'androidx.appcompat:appcompat:1.2.0'
+	implementation 'com.google.android.material:material:1.4.0'
+	implementation 'com.google.code.gson:gson:2.8.7'
+}
+
