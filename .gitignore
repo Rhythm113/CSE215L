@@ -1,1 +1,10 @@
 /core/FileTransfer/FileTrasnsfer/target/
+
+/core/File/.idea
+
+/core/File/.gradle
+
+/core/File/gradle
+
+/core/File/**/build/
+!/core/File/src/**/build/
