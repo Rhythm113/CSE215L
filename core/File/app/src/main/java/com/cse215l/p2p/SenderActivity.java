@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat;
 
 import com.google.android.material.appbar.AppBarLayout;
 
+import java.io.File;
 import java.util.*;
 
 public class SenderActivity extends AppCompatActivity {
@@ -65,7 +66,7 @@ public class SenderActivity extends AppCompatActivity {
 	private Button snd;
 	private TextView textview5;
 	private ScrollView vscroll1;
-	private TextView cs_on;
+    private static TextView cs_on;
 	
 	private final Intent selector = new Intent(Intent.ACTION_GET_CONTENT);
 	private AlertDialog.Builder global_dl;
@@ -137,20 +138,12 @@ public class SenderActivity extends AppCompatActivity {
 		selector.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
 		global_dl = new AlertDialog.Builder(this);
 		
-		button1.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View _view) {
-				ip = Clip.getClipboardText(SenderActivity.this);
-				edittext1.setText(ip);
-			}
-		});
+		button1.setOnClickListener(_view -> {
+            ip = Clip.getClipboardText(SenderActivity.this);
+            edittext1.setText(ip);
+        });
 		
-		button2.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View _view) {
-				startActivityForResult(selector, REQ_CD_SELECTOR);
-			}
-		});
+		button2.setOnClickListener(_view -> startActivityForResult(selector, REQ_CD_SELECTOR));
 		
 		seekbar1.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 			@Override
@@ -170,18 +163,20 @@ public class SenderActivity extends AppCompatActivity {
 			}
 		});
 		
-		snd.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View _view) {
-				threads = seekbar1.getProgress();
-				/* 
+		snd.setOnClickListener(_view -> {
+            threads = seekbar1.getProgress();
+            //log(String.valueOf(threads));
+            /*
 
-Sending logic & verification 
+    `			Sending logic & verification
+            */
+
+			showPairCodeDialog(threads);
+
+			//validateAndSend(ip,path_final,threads,);
 
 
-*/
-			}
-		});
+        });
 	}
 	
 	private void initializeLogic() {
@@ -219,6 +214,55 @@ Sending logic & verification
 			break;
 		}
 	}
+
+	public static void log(String msg){
+		String old = (String) cs_on.getText();
+		old += "\n";
+		old += msg;
+		cs_on.setText(old);
+	}
+
+	private void validateAndSend(String ip, String filePath, int threads, String pairCode) {
+		if (ip.trim().isEmpty() || filePath.trim().isEmpty() || pairCode.trim().isEmpty()) {
+			log("Error: All fields are required!");
+			_global_dialog("All fields are required!");
+			return;
+		}
+
+		if (!Utils.isValidIP(ip)) {
+			log("Error: Invalid IP address format!");
+			_global_dialog("Invalid IP address format!");
+			return;
+		}
+
+		File file = new File(filePath);
+		if (!file.exists()) {
+			log("Error: File does not exist!");
+			_global_dialog("File does not exist!");
+			return;
+		}
+
+		log("Starting file transfer...");
+
+		runOnUiThread(() -> {
+			try {
+				FileClient client = new FileClient(ip, 5000);
+				client.setCode(Integer.parseInt(pairCode));
+				try {
+					FileServ a = new FileServ(filePath,threads);
+					a.split();
+				}finally {
+					String[] paths = client.getPaths(filePath, threads);
+					client.sendFiles(paths, file.getName(), threads);
+					log("File transfer initiated successfully.");
+				}
+
+			} catch (Exception ex) {
+				log("Error initiating file transfer: " + ex.getMessage());
+				_global_dialog("Failed to start transfer: " + ex.getMessage());
+			}
+		});
+	}
 	
 	public void _global_dialog(final String _msg) {
 		global_dl.setTitle("Notice");
@@ -231,5 +275,36 @@ Sending logic & verification
 		});
 		global_dl.create().show();
 	}
-	
+
+
+
+	public void showPairCodeDialog(int th) {
+		EditText input = new EditText(this);
+		input.setHint("Enter 4-digit pair code");
+
+		new AlertDialog.Builder(this)
+				.setTitle("Enter Pair Code")
+				.setMessage("Please enter a 4-digit pair code:")
+				.setView(input)
+				.setPositiveButton("OK", (dialog, which) -> {
+                    String pairCode = input.getText().toString().trim();
+
+                    if (pairCode.length() == 4 && pairCode.matches("\\d+")) {
+
+                        Utils.showMessage(getApplicationContext(), "Pair Code: " + pairCode);
+                        log("Pair code set to : " + pairCode);
+						runOnUiThread(() -> {
+							validateAndSend(String.valueOf(edittext1.getText()), path_final, th, pairCode);
+						});
+                    } else {
+                        Utils.showMessage(getApplicationContext(), "Invalid pair code. Please enter a 4-digit number.");
+                    }
+                })
+				.setNegativeButton("Cancel", null)
+				.show();
+	}
+
+
+
+
 }

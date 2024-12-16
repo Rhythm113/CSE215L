@@ -1,5 +1,8 @@
 package com.cse215l.p2p;
 
+import android.content.Context;
+import android.net.Uri;
+
 import com.google.gson.*;  //https://github.com/google/gson
 import java.io.*;
 import java.security.*;
@@ -112,51 +115,47 @@ public class FileServ {
 
 
 
-    public void rebuild(String fileNaameo, String filePathToSave) throws Exception {
-
+    public void rebuild(Context context, String fileName, String filePath) throws Exception {
         Gson gson = new Gson();
         Map<String, Object> metadata;
 
-        try (FileReader jsonFile = new FileReader(filePathToSave + fileNaameo + ".json")) {
+        String metadataPath = filePath + File.separator + fileName + ".json";
+
+
+        try (FileReader jsonFile = new FileReader(metadataPath)) {
             metadata = gson.fromJson(jsonFile, Map.class);
         }
 
         String originalHash = (String) metadata.get("hash");
         List<Double> segmentSizes = (List<Double>) metadata.get("segments");
 
-        /*
-        for(int i = 0; i <= segmentSizes.size() ;i++){
-            System.out.println(segmentSizes.toArray()[i]);
-        }
-        */
 
+        String outputFilePath = filePath + File.separator + "downloaded_" + fileName;
+        try (FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+            MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
-        FileOutputStream fos = new FileOutputStream( filePathToSave+"\\downloaded_" + fileNaameo);
-        MessageDigest md5Digest = MessageDigest.getInstance("MD5");
+            for (int i = 0; i < segmentSizes.size(); i++) {
 
-        for (int i = 0; i < segmentSizes.size(); i++) {
-            String segmentName = filePathToSave + fileNaameo + ".part" + i;
-            FileInputStream fis = new FileInputStream(segmentName);
+                String segmentPath = filePath + File.separator + fileName + ".part" + i;
 
-            byte[] buffer = new byte[CHUNK_SIZE];
-            int bytesRead;
+                try (FileInputStream fis = new FileInputStream(segmentPath)) {
+                    byte[] buffer = new byte[CHUNK_SIZE];
+                    int bytesRead;
 
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                fos.write(buffer, 0, bytesRead);
-                md5Digest.update(buffer, 0, bytesRead);
+                    while ((bytesRead = fis.read(buffer)) != -1) {
+                        fos.write(buffer, 0, bytesRead);
+                        md5Digest.update(buffer, 0, bytesRead);
+                    }
+                }
             }
 
-            fis.close();
+            String rebuiltHash = bytesToHex(md5Digest.digest());
+            if (!rebuiltHash.equals(originalHash)) {
+                throw new Exception("Hash mismatch.");
+            }
+
+            RcvActivity.log( "File successfully rebuilt and verified.");
         }
-        fos.close();
-
-
-        String rebuiltHash = bytesToHex(md5Digest.digest());
-        if (!rebuiltHash.equals(originalHash)) {
-            throw new Exception("Hash mismatch.");
-        }
-
-        System.out.println("done");
     }
 
     //reference gitHub

@@ -10,7 +10,8 @@ android {
 	defaultConfig {
 		applicationId "com.cse215l.p2p"
 		minSdkVersion 21
-		targetSdkVersion 28  // Updated to the latest SDK version
+		//noinspection ExpiredTargetSdkVersion
+		targetSdkVersion 34
 		versionCode 1
 		versionName "1.0"
 	}

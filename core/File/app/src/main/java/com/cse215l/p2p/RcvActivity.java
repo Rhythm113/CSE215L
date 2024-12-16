@@ -1,5 +1,6 @@
 package com.cse215l.p2p;
 
+import android.annotation.SuppressLint;
 import android.content.*;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -42,8 +43,11 @@ public class RcvActivity extends AppCompatActivity {
 	private Button start;
 	private TextView textview9;
 	private ScrollView vscroll2;
-	private TextView cs_text;
-	
+	private static TextView cs_text;
+	private int code = Utils.randomCode();
+	private boolean isS = true;
+	private FileServer fileServer = new FileServer(5000, code, FileUtil.getExternalStorageDir().concat("/Download/P2P"),this);
+
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
@@ -52,7 +56,8 @@ public class RcvActivity extends AppCompatActivity {
 		initializeLogic();
 	}
 	
-	private void initialize(Bundle _savedInstanceState) {
+	@SuppressLint("SetTextI18n")
+    private void initialize(Bundle _savedInstanceState) {
 		_app_bar = findViewById(R.id._app_bar);
 		_coordinator = findViewById(R.id._coordinator);
 		_toolbar = findViewById(R.id._toolbar);
@@ -96,12 +101,17 @@ public class RcvActivity extends AppCompatActivity {
 			}
 		});
 		
-		start.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View _view) {
-				
+		start.setOnClickListener(_view -> {
+			if(isS) {
+				runOnUiThread(this::startServer);
+				isS = false;
+				start.setText("Stop Server");
+			}else{
+				start.setText("Start Server");
+				fileServer.stop();
+				isS = true;
 			}
-		});
+        });
 	}
 	
 	private void initializeLogic() {
@@ -123,7 +133,7 @@ lan_ip.setText(java.net.InetAddress.getLocalHost().getHostAddress());
 		android.net.wifi.WifiManager wm = (android.net.wifi.WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 		
 		int ipAddress = wm.getConnectionInfo().getIpAddress();
-		String ip = String.format(
+		@SuppressLint("DefaultLocale") String ip = String.format(
 		    "%d.%d.%d.%d",
 		    (ipAddress & 0xff),
 		    (ipAddress >> 8 & 0xff),
@@ -132,7 +142,29 @@ lan_ip.setText(java.net.InetAddress.getLocalHost().getHostAddress());
 		);
 		
 		lan_ip.setText(ip);
+		pair_code.setText(String.valueOf(code));
 		
 	}
+
+	private void startServer() {
+			try {
+				Thread serverThread = new Thread(fileServer::start);
+				serverThread.start();
+				log("Server started...");
+			} catch (Exception e) {
+				log(e.getMessage());
+			}
+
+	}
+
+	public static void log(String msg) {
+		cs_text.post(() -> {
+			String old = (String) cs_text.getText();
+			old += "\n";
+			old += msg;
+			cs_text.setText(old);
+		});
+	}
+
 	
 }

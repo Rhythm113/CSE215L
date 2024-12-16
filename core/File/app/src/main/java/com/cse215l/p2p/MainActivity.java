@@ -5,7 +5,9 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.*;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -21,6 +23,9 @@ import com.google.gson.reflect.TypeToken;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
+
+	private static final int REQUEST_MANAGE_STORAGE = 2296;
+	private static final int REQUEST_NETWORK_PERMISSION = 101;
 	
 	private HashMap<String, Object> nones = new HashMap<>();
 	
@@ -53,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
 		super.onCreate(_savedInstanceState);
 		setContentView(R.layout.main);
 		initialize(_savedInstanceState);
+		checkAndRequestPermissions();
 		
 		if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED
 		|| ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
@@ -60,6 +66,16 @@ public class MainActivity extends AppCompatActivity {
 		} else {
 			initializeLogic();
 		}
+
+		StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+				.detectNetwork()
+				.penaltyLog()
+				.build());
+		StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+				.detectLeakedClosableObjects()
+				.penaltyLog()
+				.build());
+
 	}
 	
 	@Override
@@ -69,6 +85,38 @@ public class MainActivity extends AppCompatActivity {
 			initializeLogic();
 		}
 	}
+
+
+	public void checkAndRequestPermissions() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			// Check if "All Files Access" permission is granted
+			if (!Environment.isExternalStorageManager()) {
+				try {
+					Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+					intent.setData(Uri.parse("package:" + getPackageName()));
+					startActivityForResult(intent, REQUEST_MANAGE_STORAGE);
+				} catch (Exception e) {
+					Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+					startActivityForResult(intent, REQUEST_MANAGE_STORAGE);
+				}
+			} else {
+				Utils.showMessage(this, "All Files Access Permission Already Granted");
+			}
+		} else {
+			// Request traditional storage permissions for Android < 11
+			ActivityCompat.requestPermissions(
+					this,
+					new String[]{
+							Manifest.permission.READ_EXTERNAL_STORAGE,
+							Manifest.permission.WRITE_EXTERNAL_STORAGE
+					},
+					REQUEST_NETWORK_PERMISSION
+			);
+		}
+	}
+
+
+
 	
 	private void initialize(Bundle _savedInstanceState) {
 		linear1 = findViewById(R.id.linear1);
@@ -92,33 +140,22 @@ public class MainActivity extends AppCompatActivity {
 		welcome = new AlertDialog.Builder(this);
 		warn = new AlertDialog.Builder(this);
 		
-		button1.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View _view) {
-				send.setClass(getApplicationContext(), SenderActivity.class);
-				startActivity(send);
-			}
-		});
+		button1.setOnClickListener(_view -> {
+            send.setClass(getApplicationContext(), SenderActivity.class);
+            startActivity(send);
+        });
 		
-		button2.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View _view) {
-				rcv.setClass(getApplicationContext(), RcvActivity.class);
-				startActivity(rcv);
-			}
-		});
+		button2.setOnClickListener(_view -> {
+            rcv.setClass(getApplicationContext(), RcvActivity.class);
+            startActivity(rcv);
+        });
 	}
 	
 	private void initializeLogic() {
 		FileUtil.makeDir(FileUtil.getPackageDataDir(getApplicationContext()));
 		welcome.setTitle("Notice");
 		welcome.setMessage("This is just a test version. Might contain a lot of bugs !");
-		welcome.setPositiveButton("Understood", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface _dialog, int _which) {
-				Utils.showMessage(getApplicationContext(), "Enjoy");
-			}
-		});
+		welcome.setPositiveButton("Understood", (_dialog, _which) -> Utils.showMessage(getApplicationContext(), "Enjoy"));
 		welcome.create().show();
 		nones = new Gson().fromJson("{}", new TypeToken<HashMap<String, Object>>(){}.getType());
 	}
@@ -127,18 +164,8 @@ public class MainActivity extends AppCompatActivity {
 	public void onBackPressed() {
 		warn.setTitle("Note");
 		warn.setMessage("Do you really want to quit?");
-		warn.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface _dialog, int _which) {
-				finish();
-			}
-		});
-		warn.setNegativeButton("No", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface _dialog, int _which) {
-				Utils.showMessage(getApplicationContext(), "Ok");
-			}
-		});
+		warn.setPositiveButton("Yes", (_dialog, _which) -> finish());
+		warn.setNegativeButton("No", (_dialog, _which) -> Utils.showMessage(getApplicationContext(), "Ok"));
 		warn.create().show();
 	}
 }
