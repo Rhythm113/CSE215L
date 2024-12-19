@@ -216,10 +216,13 @@ public class SenderActivity extends AppCompatActivity {
 	}
 
 	public static void log(String msg){
-		String old = (String) cs_on.getText();
-		old += "\n";
-		old += msg;
-		cs_on.setText(old);
+		cs_on.post(() -> {
+			String old = (String) cs_on.getText();
+			old += "\n";
+			old += msg;
+			cs_on.setText(old);
+		});
+
 	}
 
 	private void validateAndSend(String ip, String filePath, int threads, String pairCode) {
@@ -267,12 +270,9 @@ public class SenderActivity extends AppCompatActivity {
 	public void _global_dialog(final String _msg) {
 		global_dl.setTitle("Notice");
 		global_dl.setMessage(_msg);
-		global_dl.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface _dialog, int _which) {
-				
-			}
-		});
+		global_dl.setPositiveButton("Ok", (_dialog, _which) -> {
+
+        });
 		global_dl.create().show();
 	}
 
